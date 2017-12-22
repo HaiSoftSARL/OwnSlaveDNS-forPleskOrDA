@@ -14,7 +14,7 @@ fi
 # Définition des constantes
 psa_host="$1"
 psa_user="dns"
-psa_password="noh4icaigh2weiGaiph3sahDoeThaequ5HeGha2oeMeezee6re"
+psa_password="SomeRandomPasswordYouChoose"
 psa_db="psa"
 psa_sql="select name from domains where parentDomainId = 0"
 script_name=$(basename "$0")
