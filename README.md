@@ -17,6 +17,10 @@ If you want to be more restrictive, you can specify the IP address instead of % 
 
 Still on the master server, from Plesk, you need to add the IP of your slave server to the "Common Allow Zone Transfer ACL" :
 Tools & Settings > DNS Template > Transfer Restrictions Template > Add Address
+You can also do this from command line :
+````bash
+/usr/local/psa/bin/server_dns -u -add-acl IP.IP.IP.IP
+````
 
 You can then download the script on the slave server :
 ````bash
