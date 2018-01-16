@@ -10,7 +10,7 @@ On the master server, add a SQL user, which will only be able to show the domain
 ````sql
 CREATE USER 'dns'@'%' identified by 'SomeRandomPasswordYouChoose';
 GRANT USAGE ON *.* TO 'dns'@'%' with MAX_QUERIES_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
-GRANT SELECT ON psa.domains TO 'dns'@'%';
+GRANT SELECT ON psa.dns_zone TO 'dns'@'%';
 FLUSH PRIVILEGES;
 ````
 If you want to be more restrictive, you can specify the IP address instead of % in the SQL query.
