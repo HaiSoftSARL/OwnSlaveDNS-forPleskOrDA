@@ -16,7 +16,7 @@ psa_host="$1"
 psa_user="dns"
 psa_password="SomeRandomPasswordYouChoose"
 psa_db="psa"
-psa_sql="select name from domains where parentDomainId = 0"
+psa_sql="select name from dns_zone where status=0 and type='master'"
 script_name=$(basename "$0")
 export "$(grep -v ^# /etc/sysconfig/named | grep ROOTDIR | xargs)"
 temp=$(grep directory /etc/named.conf | awk '{print $2}') ; temp=${temp//\"/} ; named_dir=${temp//\;/}
