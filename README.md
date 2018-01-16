@@ -13,7 +13,14 @@ GRANT USAGE ON *.* TO 'dns'@'%' with MAX_QUERIES_PER_HOUR 0 MAX_UPDATES_PER_HOUR
 GRANT SELECT ON psa.dns_zone TO 'dns'@'%';
 FLUSH PRIVILEGES;
 ````
-If you want to be more restrictive, you can specify the IP address instead of % in the SQL query.
+
+If you want to be more restrictive, you can specify the IP address instead of % in the SQL query. Here's a "bash version" :
+````bash
+echo "CREATE USER 'dns'@'IP.IP.IP.IP' identified by 'SomeRandomPasswordYouChoose';" | plesk db
+echo "GRANT USAGE ON *.* TO 'dns'@'IP.IP.IP.IP' with MAX_QUERIES_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_USER_CONNECTIONS 0;" | plesk db
+echo "GRANT SELECT ON psa.dns_zone TO 'dns'@'IP.IP.IP.IP';" | plesk db
+echo "FLUSH PRIVILEGES;" | plesk db
+````
 
 Still on the master server, from Plesk, you need to add the IP of your slave server to the "Common Allow Zone Transfer ACL" :
 Tools & Settings > DNS Template > Transfer Restrictions Template > Add Address
@@ -33,6 +40,8 @@ Execute the script with the IP of the master server as argument :
 /opt/slave-retrieve.sh IP.IP.IP.IP
 ````
 At each execution, the script will check if there are new domains (or removed domains) on the specified host, in comparison to the actual slaves zones, and add/remove these domains.
+
+If the script is executed without any argument, it will do the check for the masters already added.
 
 This script does the job only when executed, so you may want to setup a cron job to execute it.
 
