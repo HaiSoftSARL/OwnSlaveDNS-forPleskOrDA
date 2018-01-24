@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Définition des constantes
+# Définition des constantes
 psa_user="dns"
 psa_password="SomeRandomPasswordYouChoose"
 psa_db="psa"
@@ -33,44 +33,47 @@ else
         var=$1
 fi
 
-printf '%s\n' "$var" | while IFS= read -r i ; do
-
+for i in $var
+do
         host=$i
-        echo -e "\\nVérification des zones sur le serveur $i\\n"
 
-        # Création de répertoire
+        # Création de répertoire
         if [ ! -d "$fulldir"/slaves/"$host" ];
         then
             mkdir "$fulldir"/slaves/"$host"
             chown named:named "$fulldir"/slaves/"$host"
         fi
 
-        # Exécution de la requête SQL et stockage du résultat dans un fichier et dans une variable
-        # Vérification si le serveur source utilise Plesk ou DirectAdmin
-        if [ -f "/usr/local/psa/version" ];
+        # Exécution de la requête SQL et stockage du résultat dans un fichier
+        # Vérification si le serveur source utilise Plesk ou DirectAdmin
+        if curl -s -m 1 https://"$host":8443 -k | grep -i plesk > /dev/null
         then
+            echo -e "\\nVérification des zones sur le serveur $host (Plesk)\\n"
             echo "$psa_sql" | mysql -N -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" > /opt/dns1zones.txt
         else
-            if [ -f "/usr/local/directadmin/directadmin" ];
+            if curl -s -L https://154.41.66.41:2222 -k | grep -i DirectAdmin > /dev/null
             then
+                echo -e "\\nVérification des zones sur le serveur $host (DirectAdmin)\\n"
                 ssh root@"$host" 'cat /etc/virtual/domainowners | cut -d ":" -f 1' > /opt/dns1zones.txt
             else
-                echo "Error. Your server does not seem to run Plesk or DirectAdmin."
-                echo "Other configuration are not supported right now."
+                echo "Error : Your server does not seem to run Plesk or DirectAdmin."
+                echo "Other configurations are not supported right now."
                 exit
             fi
         fi
+
+        if [ ! -s "/opt/dns1zones.txt" ] ; then echo "The domain list could not be retreived. Exiting..." ; exit ; fi
 
         # Récupération de la liste des zones présentes sur le serveur secondaire et stockage dans un fichier
         touch /opt/dns2zones.txt
         find "$fulldir"/slaves/"$host" -maxdepth 1 -type f -printf "%f\\n" > /opt/dns2zones.txt
 
         # Compare la liste des domaines présents dans slaves/$host avec liste des domaines du serveur d'origine
-        # Les domaines indiqués par cette commande sont les domaines à ajouter (addzone)
+        # Les domaines indiqués par cette commande sont les domaines à ajouter (addzone)
         domtoadd=$(grep -Fxv -f /opt/dns2zones.txt /opt/dns1zones.txt)
 
         # Compare la liste des domaines du serveur d'origine avec la liste des domaines présents dans slaves/$host
-        # Les domaines indiqués par cette commande sont les domaines à supprimer (delzone)
+        # Les domaines indiqués par cette commande sont les domaines à supprimer (delzone)
         domtodel=$(grep -Fxv -f /opt/dns1zones.txt /opt/dns2zones.txt)
 
         if [ -z "$domtoadd" ]
@@ -106,5 +109,5 @@ printf '%s\n' "$var" | while IFS= read -r i ; do
             done
         fi
 
-        rm -f /opt/dns1zones.txt /opt/dns2zones.txt /opt/IPlist.txt
+        rm -f /opt/dns1zones.txt /opt/dns2zones.txt /opt/SrvList.txt
 done
