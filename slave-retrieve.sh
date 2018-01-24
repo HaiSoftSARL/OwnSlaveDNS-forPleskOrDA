@@ -2,7 +2,7 @@
 
 # Définition des constantes
 psa_user="dns"
-psa_password="noh4icaigh2weiGaiph3sahDoeThaequ5HeGha2oeMeezee6re"
+psa_password="SomeRandomPasswordYouChoose"
 psa_db="psa"
 psa_sql="select name from dns_zone where status=0 and type='master'"
 script_name=$(basename "$0")
