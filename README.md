@@ -1,12 +1,16 @@
-# OwnSlaveDNS-forPlesk
-Helps to retrieve DNS zones from a Plesk server to a secondary DNS server (bind)
+# OwnSlaveDNS-forPleskOrDA
+Helps to retrieve DNS zones from a Plesk or DirectAdmin server to a secondary DNS server (bind)
 
 Requirements on slave server :
 - Bind (named ; named-chroot...)
 - MySQL client
 - Add option "allow-new-zones yes;" in /etc/named.conf
 
-On the master server, add a SQL user, which will only be able to show the domains :
+Requirements on master server :
+- Allow SQL connection from slave (for Plesk)
+- Allow SSH connection from slave (for DirectAdmin)
+
+For Plesk, on the master server, add a SQL user, which will only be able to show the domains :
 ````sql
 CREATE USER 'dns'@'%' identified by 'SomeRandomPasswordYouChoose';
 GRANT USAGE ON *.* TO 'dns'@'%' with MAX_QUERIES_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
@@ -28,6 +32,8 @@ You can also do this from command line :
 ````bash
 /usr/local/psa/bin/server_dns -u -add-acl IP.IP.IP.IP
 ````
+
+On a DirectAdmin server, you must add the IP in the "allow-transfer" setion of the /etc/named.conf file.
 
 You can then download the script on the slave server :
 ````bash
