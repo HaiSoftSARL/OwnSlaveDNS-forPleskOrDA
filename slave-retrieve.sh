@@ -35,28 +35,41 @@ fi
 
 printf '%s\n' "$var" | while IFS= read -r i ; do
 
-        psa_host=$i
+        host=$i
         echo -e "\\nVérification des zones sur le serveur $i\\n"
 
         # Création de répertoire
-        if [ ! -d "$fulldir"/slaves/"$psa_host" ];
+        if [ ! -d "$fulldir"/slaves/"$host" ];
         then
-            mkdir "$fulldir"/slaves/"$psa_host"
-            chown named:named "$fulldir"/slaves/"$psa_host"
+            mkdir "$fulldir"/slaves/"$host"
+            chown named:named "$fulldir"/slaves/"$host"
         fi
 
         # Exécution de la requête SQL et stockage du résultat dans un fichier et dans une variable
-        echo "$psa_sql" | mysql -N -h"$psa_host" -u"$psa_user" -p"$psa_password" "$psa_db" > /opt/dns1zones.txt
+        # Vérification si le serveur source utilise Plesk ou DirectAdmin
+        if [ -f "/usr/local/psa/version" ];
+        then
+            echo "$psa_sql" | mysql -N -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" > /opt/dns1zones.txt
+        else
+            if [ -f "/usr/local/directadmin/directadmin" ];
+            then
+                ssh root@"$host" 'cat /etc/virtual/domainowners | cut -d ":" -f 1' > /opt/dns1zones.txt
+            else
+                echo "Error. Your server does not seem to run Plesk or DirectAdmin."
+                echo "Other configuration are not supported right now."
+                exit
+            fi
+        fi
 
         # Récupération de la liste des zones présentes sur le serveur secondaire et stockage dans un fichier
         touch /opt/dns2zones.txt
-        find "$fulldir"/slaves/"$psa_host" -maxdepth 1 -type f -printf "%f\\n" > /opt/dns2zones.txt
+        find "$fulldir"/slaves/"$host" -maxdepth 1 -type f -printf "%f\\n" > /opt/dns2zones.txt
 
-        # Compare la liste des domaines présents dans slaves/$psa_host avec liste des domaines du serveur d'origine
+        # Compare la liste des domaines présents dans slaves/$host avec liste des domaines du serveur d'origine
         # Les domaines indiqués par cette commande sont les domaines à ajouter (addzone)
         domtoadd=$(grep -Fxv -f /opt/dns2zones.txt /opt/dns1zones.txt)
 
-        # Compare la liste des domaines du serveur d'origine avec la liste des domaines présents dans slaves/$psa_host
+        # Compare la liste des domaines du serveur d'origine avec la liste des domaines présents dans slaves/$host
         # Les domaines indiqués par cette commande sont les domaines à supprimer (delzone)
         domtodel=$(grep -Fxv -f /opt/dns1zones.txt /opt/dns2zones.txt)
 
@@ -67,7 +80,7 @@ printf '%s\n' "$var" | while IFS= read -r i ; do
         else
             for domain_a in $domtoadd
             do
-                addcommand="/usr/sbin/rndc addzone $domain_a '{type slave; file \"slaves/${psa_host}/${domain_a}\"; masters { $psa_host; }; };'"
+                addcommand="/usr/sbin/rndc addzone $domain_a '{type slave; file \"slaves/${host}/${domain_a}\"; masters { $host; }; };'"
                 eval "$addcommand"
                 echo -e "$(date "+%d/%m/%Y %T") - Adding domain: $domain_a\\n"
                 logger -t "$script_name" -- "/usr/sbin/rndc addzone $addcommand"
@@ -85,7 +98,7 @@ printf '%s\n' "$var" | while IFS= read -r i ; do
             do
                 delcommand="/usr/sbin/rndc delzone $domain_d"
                 eval "$delcommand"
-                rm -f "$fulldir"/slaves/"$psa_host"/"$domain_d"
+                rm -f "$fulldir"/slaves/"$host"/"$domain_d"
                 echo -e "$(date "+%d/%m/%Y %T") - Removing domain: $domain_d\\n"
                 logger -t "$script_name" -- "/usr/sbin/rndc delzone $domain_d"
 
