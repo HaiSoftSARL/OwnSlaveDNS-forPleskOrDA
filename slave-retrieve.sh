@@ -51,7 +51,7 @@ do
             echo -e "\\nVérification des zones sur le serveur $host (Plesk)\\n"
             echo "$psa_sql" | mysql -N -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" > /opt/dns1zones.txt
         else
-            if curl -s -L https://154.41.66.41:2222 -k | grep -i DirectAdmin > /dev/null
+            if curl -s -L https://"$host":2222 -k | grep -i DirectAdmin > /dev/null
             then
                 echo -e "\\nVérification des zones sur le serveur $host (DirectAdmin)\\n"
                 ssh root@"$host" 'cat /etc/virtual/domainowners | cut -d ":" -f 1' > /opt/dns1zones.txt
