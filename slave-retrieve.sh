@@ -42,7 +42,7 @@ for i in $var; do
 
 	# Exécution de la requête SQL et stockage du résultat dans un fichier
 	# Vérification si le serveur source utilise Plesk ou DirectAdmin
-	if curl -s -m 1 https://"$host":8443 -k | grep -i plesk > /dev/null; then
+	if mysqlshow -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" | grep -v Wildcard | grep -o psa > /dev/null; then
 		echo -e "\\nVérification des zones sur le serveur $host (Plesk)\\n"
 		echo "$psa_sql" | mysql -N -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" > "/opt/dns1zones.txt"
 	elif curl -s -m 1 -L https://"$host":2222 -k | grep -i DirectAdmin > /dev/null; then
