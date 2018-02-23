@@ -8,7 +8,7 @@ Requirements on slave server :
 
 Requirements on master server :
 - Allow SQL connection from slave (for Plesk)
-- Allow SSH connection from slave (for DirectAdmin)
+- Allow SSH/SQL connection from slave (for DirectAdmin)
 
 For Plesk, on the master server, add a SQL user, which will only be able to show the domains :
 ````sql
@@ -47,6 +47,8 @@ Execute the script with the IP of the master server as argument :
 ````
 At each execution, the script will check if there are new domains (or removed domains) on the specified host, in comparison to the actual slaves zones, and add/remove these domains.
 
+--
+
 If the script is executed without any argument, it will do the check for the masters already added.
 
 This script does the job only when executed, so you may want to setup a cron job to execute it.
@@ -56,6 +58,13 @@ Also, if you want to execute this script for different master servers, you may r
 while IFS= read -r i ; do 
 	echo "$i" ; /opt/slave-retrieve.sh "$i" < /dev/null
 done < IPlist.txt
+````
+
+--
+
+If the script is executed with the argument -d, it allows to "move" a domain from one master to another :
+````
+./slave-retrieve.sh -d domain.tld IP1.IP1.IP1.IP1 IP2.IP2.IP2.IP2
 ````
 
 Tested and created on CentOS 7.
