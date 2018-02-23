@@ -11,16 +11,51 @@ export "$(grep -v ^# /etc/sysconfig/named | grep ROOTDIR | xargs)"
 temp=$(grep directory /etc/named.conf | awk '{print $2}') ; temp=${temp//\"/} ; named_dir=${temp//\;/}
 fulldir=$ROOTDIR$named_dir
 
-if [ "$1" == "-h" ]; then
-	echo "Usage :"
-	echo "If an IP address is passed as an argument, the script will retreive DNS zones from this IP."
-	echo "If no agrument is passed, the script will check the DNS zones for the IP adresses that have already been added."
+if [ "$1" == "-h" ]||[ "$1" == "--help" ]; then
+	echo "Help :"
+	echo "Usage: ./slave-retrieve.sh [options] [argument]"
+	echo "  -h, --help	Display this help and exit."
+	echo "  -d \$2 \$3 \$4	Move a domain from one server to another : Respectively input domain, old IP and new IP."
+	echo "  Without option : If an IP address is passed as an argument, the script will retrieve DNS zones from this IP."
+	echo "  Without option or argument : The script will check the DNS zones for the IP adresses that have already been added."
 	exit
 fi
 
+if [ "$1" == "-d" ]; then
+        if [ -n "$4" ]; then
+                if [ -n "$5" ]; then
+                        echo "Too many arguments"
+                        exit
+                else
+                        if [ -f "$fulldir/slaves/$3/$2" ]; then
+                                delcommand="/usr/sbin/rndc delzone $2"
+                                eval "$delcommand"
+                                rm -f "$fulldir/slaves/$3/$2"
+                                echo -e "$(date "+%d/%m/%Y %T") - Removing domain: $2\\n"
+                                /usr/sbin/rndc reload
+
+                                addcommand="/usr/sbin/rndc addzone $2 '{type slave; file \"slaves/$4/$2\"; masters { $4; }; };'"
+                                eval "$addcommand"
+                                echo -e "$(date "+%d/%m/%Y %T") - Adding domain: $2\\n"
+                                logger -t "$script_name" -- "/usr/sbin/rndc addzone $addcommand"
+                                /usr/sbin/rndc reload
+                                exit
+                        else
+                                echo "The domain does not exists on the specified old server IP."
+                                exit
+                        fi
+                fi
+        else
+                echo "Missing argument(s)"
+                echo "Usage: ./slave-retrieve.sh [options] [argument]"
+                echo "  -d \$2 \$3 \$4	Move a domain from one server to another : Respectively input domain, old IP and new IP."
+                exit
+        fi
+fi
+
 if [ -n "$2" ]; then
-	echo "Too much arguments"
-	exit
+        echo "Too many arguments"
+        exit
 fi
 
 if [ -z "$1" ]; then
@@ -42,7 +77,7 @@ for i in $var; do
 
 	# Exécution de la requête SQL et stockage du résultat dans un fichier
 	# Vérification si le serveur source utilise Plesk ou DirectAdmin
-	if mysqlshow -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" | grep -v Wildcard | grep -o psa > /dev/null; then
+	if mysqlshow -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" 2>/dev/null | grep -v Wildcard | grep -o psa > /dev/null; then
 		echo -e "\\nVérification des zones sur le serveur $host (Plesk)\\n"
 		echo "$psa_sql" | mysql -N -h"$host" -u"$psa_user" -p"$psa_password" "$psa_db" > "/opt/dns1zones.txt"
 	elif curl -s -m 1 -L https://"$host":2222 -k | grep -i DirectAdmin > /dev/null; then
@@ -55,13 +90,13 @@ for i in $var; do
 	fi
 
 	if [ ! -s "/opt/dns1zones.txt" ]; then
-		echo "The domain list could not be retreived. Exiting..."
+		echo "The domain list could not be retrieved. Exiting..."
 		echo "DNS update failed for master $host" | mail -s "DNS update failure warning" "$alert_mail"
 		if [ ! -f "$fulldir/slaves/$host/.failed" ]; then
 			touch "$fulldir/slaves/$host/.failed"
 			break
 		elif [ -n "$(find "$fulldir/slaves/$host" -name ".failed" -mtime +5 -print)" ]; then
-			echo "The domain list could not be retreived since five days. Deleting..."
+			echo "The domain list could not be retrieved since five days. Deleting..."
 			echo "DNS replication deleted for master $host after five failed days" | mail -s "DNS replication deleted" "$alert_mail"
 			ls "$fulldir/slaves/$host/" > /opt/d5DomainsList.txt
 			var2="$(cat /opt/d5DomainsList.txt)"
@@ -114,7 +149,7 @@ for i in $var; do
 		do
 			delcommand="/usr/sbin/rndc delzone $domain_d"
 			eval "$delcommand"
-			rm -f "$fulldir"/slaves/"$host"/"$domain_d"
+			rm -f "$fulldir/slaves/$host/$domain_d"
 			echo -e "$(date "+%d/%m/%Y %T") - Removing domain: $domain_d\\n"
 			logger -t "$script_name" -- "/usr/sbin/rndc delzone $domain_d"
 
