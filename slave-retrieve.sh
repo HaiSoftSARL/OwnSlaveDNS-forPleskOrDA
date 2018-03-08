@@ -93,7 +93,7 @@ for i in $var; do
 		echo "DNS update failed for master $host" | mail -s "DNS update failure warning" "$alert_mail"
 		if [ ! -f "$fulldir/slaves/$host/.failed" ]; then
 			touch "$fulldir/slaves/$host/.failed"
-			break
+			continue
 		elif [ -n "$(find "$fulldir/slaves/$host" -name ".failed" -mtime +5 -print)" ]; then
 			echo "The domain list could not be retrieved since five days. Deleting..."
 			echo "DNS replication deleted for master $host after five failed days" | mail -s "DNS replication deleted" "$alert_mail"
@@ -105,9 +105,9 @@ for i in $var; do
 				/usr/sbin/rndc reload
 			done
 			rm -rf "$fulldir/slaves/$host"
-			break
+			continue
 		else
-			break
+			continue
 		fi
 	else
 		rm -f "$fulldir/slaves/$host/.failed"
