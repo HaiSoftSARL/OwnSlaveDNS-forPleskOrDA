@@ -84,9 +84,8 @@ for i in $var; do
 		echo -e "\\nVérification des zones sur le serveur $host (DirectAdmin)\\n"
 		ssh root@"$host" 'cat /etc/virtual/domainowners | cut -d ":" -f 1' > "/opt/dns1zones.txt"
 	else
-		echo "Error : Your server does not seem to run Plesk or DirectAdmin."
-		echo "Other configurations are not supported right now."
-		break
+		echo "Error : Your server does not seem to run Plesk or DirectAdmin, or there is a connectivity issue."
+		echo "Please check that you can access this server through SSH or SQL."
 	fi
 
 	if [ ! -s "/opt/dns1zones.txt" ]; then
