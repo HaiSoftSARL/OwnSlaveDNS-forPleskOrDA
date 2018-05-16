@@ -37,7 +37,7 @@ On a DirectAdmin server, you must add the IP in the "allow-transfer" setion of 
 
 You can then download the script on the slave server :
 ````bash
-cd /opt/ && wget https://raw.githubusercontent.com/HaiSoftSARL/OwnSlaveDNS-forPleskorDA/master/slave-retrieve.sh && chmod +x slave-retrieve.sh
+cd /opt/ && wget https://raw.githubusercontent.com/HaiSoftSARL/OwnSlaveDNS-forPleskOrDA/master/slave-retrieve.sh && chmod +x slave-retrieve.sh
 ````
 Edit the script to replace the content of "psa_password" with the password you choosed before.
 
